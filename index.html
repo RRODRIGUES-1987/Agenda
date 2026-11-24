@@ -414,7 +414,24 @@ function setTab(t){
 /* ---------- sheets ---------- */
 function openSheet(id){$("scrim").classList.add("on");$(id).classList.add("on")}
 function hideSheets(){document.querySelectorAll(".sheet").forEach(function(s){s.classList.remove("on")})}
-function closeSheets(){$("scrim").classList.remove("on");hideSheets()}
+function closeSheets(){$("scrim").classList.remove("on");hideSheets();if(pendingReload)location.reload()}
+
+/* ---------- atualização automática ---------- */
+var pendingReload=false;
+function reloadWhenIdle(){
+  if(document.querySelector(".sheet.on")){pendingReload=true}else{location.reload()}
+}
+function hashText(t){var h=5381;for(var i=0;i<t.length;i++){h=((h<<5)+h+t.charCodeAt(i))|0}return String(h)}
+function checkBuild(){
+  try{
+    fetch("index.html?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():null}).then(function(t){
+      if(!t)return;
+      var h=hashText(t),old=null;
+      try{old=localStorage.getItem("agenda-build");localStorage.setItem("agenda-build",h)}catch(e){}
+      if(old&&old!==h)reloadWhenIdle();
+    }).catch(function(){});
+  }catch(e){}
+}
 $("scrim").addEventListener("click",closeSheets);
 
 /* ---------- formulário ---------- */
@@ -638,9 +655,24 @@ $("imp").addEventListener("change",function(){
 });
 
 render();
-document.addEventListener("visibilitychange",function(){if(!document.hidden&&!$("evSheet").classList.contains("on"))render()});
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden)return;
+  if(!$("evSheet").classList.contains("on"))render();
+  if(location.protocol.indexOf("http")===0)checkBuild();
+});
+if(location.protocol.indexOf("http")===0){
+  checkBuild();
+  setInterval(function(){if(!document.hidden)checkBuild()},5*60*1000);
+}
 if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){
-  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+  var hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",function(){if(hadController)reloadWhenIdle()});
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(function(reg){
+      reg.update().catch(function(){});
+      document.addEventListener("visibilitychange",function(){if(!document.hidden)reg.update().catch(function(){})});
+    }).catch(function(){});
+  });
 }
 })();
 </script>
