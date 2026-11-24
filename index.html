@@ -126,6 +126,36 @@ label,.lab{display:block;font-size:13px;color:var(--muted);margin:14px 4px 6px;f
 .opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:14px;padding:13px 14px;margin-top:10px;color:var(--text)}
 .opt small{display:block;color:var(--muted);font-weight:600;margin-top:2px}
 .opt.danger{color:#c2456d}
+.vtg{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:14px;padding:3px;margin:6px 0 10px}
+.vtg button{padding:9px;border-radius:12px;color:var(--deep);font-weight:700}
+.vtg button.on{background:var(--accent);color:#fff}
+.wk{display:grid;grid-template-columns:26px repeat(7,minmax(0,1fr));gap:3px;padding:6px}
+.wh{text-align:center}
+.wh button{display:block;width:100%;font-size:11px;color:var(--muted);font-weight:700;padding:2px 0 4px}
+.wh b{display:block;font-size:14px;color:var(--text);margin:2px auto 0;width:26px;height:26px;line-height:26px;border-radius:50%}
+.wh.today b{background:var(--accent);color:#fff}
+.wh.sel b{box-shadow:0 0 0 2px var(--accent)}
+.wl{display:grid;place-items:center;font-size:14px}
+.wc{min-height:58px;border-radius:9px;background:var(--bg);padding:2px;display:flex;flex-direction:column;gap:2px;overflow:hidden;text-align:left;width:100%;min-width:0}
+.wc.sel{box-shadow:0 0 0 2px var(--accent)}
+.wb{display:block;height:16px;border-radius:5px;background:var(--k);font-size:10px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:1px 3px;line-height:14px}
+.wb.dn{opacity:.45;text-decoration:line-through}
+.wm{font-size:10px;color:var(--muted);text-align:center}
+.pth{display:flex;gap:10px;flex-wrap:wrap}
+.pp{position:relative;width:64px;height:64px}
+.pp img{width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;background:var(--soft)}
+.pp .rm{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--deep);color:#fff;font-size:13px;line-height:24px;text-align:center}
+.cbtns{display:flex;gap:8px}
+.cbtns .btn{flex:1;align-self:auto;padding:11px 8px}
+.ngal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0 8px}
+.ngal button{aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--soft);padding:0;display:block}
+.ngal img{width:100%;height:100%;object-fit:cover;display:block}
+.ngal .miss{width:100%;height:100%;display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center;padding:4px}
+.note .foot .acts{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.lb{position:fixed;inset:0;background:rgba(40,20,28,.92);z-index:20;display:none;align-items:center;justify-content:center;padding:16px}
+.lb.on{display:flex}
+.lb img{max-width:100%;max-height:100%;border-radius:14px}
+.lb .cl{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;width:42px;height:42px;border-radius:50%;background:#fff;color:var(--deep);font-size:20px}
 [hidden]{display:none!important}
 
 @media (prefers-reduced-motion:reduce){.sheet{transition:none}}
@@ -162,6 +192,10 @@ label,.lab{display:block;font-size:13px;color:var(--muted);margin:14px 4px 6px;f
   <button data-tab="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="4"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Agenda</button>
   <button data-tab="notas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3zM9.5 21h5"/></svg>Notas</button>
 </nav>
+
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fGal" accept="image/*" multiple hidden>
+<div class="lb" id="lb"><button class="cl" id="lbX" aria-label="Fechar">✕</button><img id="lbImg" alt=""></div>
 
 <div class="scrim" id="scrim"></div>
 
@@ -235,7 +269,7 @@ label,.lab{display:block;font-size:13px;color:var(--muted);margin:14px 4px 6px;f
   <label for="setName">Como devo te chamar?</label>
   <input type="text" id="setName" placeholder="Seu nome">
   <div class="lab">Backup</div>
-  <p style="margin:0 4px 10px;font-size:14px;color:var(--muted)">Os dados ficam só neste celular. Salve um backup de vez em quando.</p>
+  <p style="margin:0 4px 10px;font-size:14px;color:var(--muted)">Os dados ficam só neste celular. O backup guarda agenda e notas, mas não as fotos.</p>
   <div class="row">
     <button class="btn ghost" id="exp">Salvar backup</button>
     <button class="btn ghost" id="impBtn">Restaurar</button>
@@ -275,8 +309,9 @@ function migrate(e){
   if(!Array.isArray(e.ex))e.ex=[];
   return e;
 }
+function fixNote(n){if(!Array.isArray(n.photos))n.photos=[];if(typeof n.text!=="string")n.text="";return n}
 var S={events:[],notes:[],name:""};
-try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);S.events=(p.events||[]).map(migrate);S.notes=p.notes||[];S.name=p.name||""}}catch(e){}
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);S.events=(p.events||[]).map(migrate);S.notes=(p.notes||[]).map(fixNote);S.name=p.name||""}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 /* ---------- recorrência (a regra fica guardada, as datas são geradas na exibição) ---------- */
@@ -313,6 +348,8 @@ function dayItems(ds){
 
 /* ---------- estado de tela ---------- */
 var tab="hoje",cursor=new Date(),selDay=iso(new Date()),tagFilter="",q="";
+var agView="mes",selPeriod=null,notesMode="all",nDraft="",pend=[],urls={};
+try{if(localStorage.getItem("agenda-view")==="sem")agView="sem"}catch(e){}
 cursor.setDate(1);
 
 function evHTML(it,showDate,grouped){
@@ -356,7 +393,7 @@ function renderHoje(){
   $("v-hoje").innerHTML=h;
 }
 
-function renderAgenda(){
+function renderMonth(){
   var y=cursor.getFullYear(),m=cursor.getMonth();
   var first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
   var today=iso(new Date());
@@ -369,11 +406,60 @@ function renderAgenda(){
     g+='<button class="day'+(ds===today?" today":"")+(ds===selDay?" sel":"")+'" data-day="'+ds+'">'+d+'<span class="dots">'+dots+'</span></button>';
   }
   var list=dayItems(selDay);
-  $("v-agenda").innerHTML=
+  var out=
    '<div class="monthbar"><button class="icon-btn" data-m="-1" aria-label="Mês anterior">‹</button><strong>'+MESES[m]+' '+y+'</strong><button class="icon-btn" data-m="1" aria-label="Próximo mês">›</button></div>'
    +'<div class="card grid">'+g+'</div>'
    +'<h2>'+longDate(selDay)+'</h2>'
    +(list.length?groupedHTML(list):'<div class="empty">Dia livre. Toque no + para marcar algo.</div>');
+  return out;
+}
+
+function weekStart(ds){return addDays(ds,-parse(ds).getDay())}
+function weekTitle(a,b){
+  var da=parse(a),db=parse(b);
+  if(da.getMonth()===db.getMonth())return da.getDate()+" a "+db.getDate()+" de "+MESES[db.getMonth()];
+  return da.getDate()+" "+MESES[da.getMonth()].slice(0,3)+" a "+db.getDate()+" "+MESES[db.getMonth()].slice(0,3);
+}
+function renderWeek(){
+  var a=weekStart(selDay),b=addDays(a,6),today=iso(new Date()),days=[],items={};
+  for(var i=0;i<7;i++)days.push(addDays(a,i));
+  days.forEach(function(ds){
+    var m={dia:[],manha:[],tarde:[],noite:[]};
+    dayItems(ds).forEach(function(it){m[periodOf(it.e)].push(it)});
+    items[ds]=m;
+  });
+  var g="<div></div>"+days.map(function(ds){
+    var d=parse(ds);
+    return'<div class="wh'+(ds===today?" today":"")+(ds===selDay&&selPeriod===null?" sel":"")+'"><button data-wday="'+ds+'" aria-label="'+longDate(ds)+'">'+DLET[d.getDay()]+"<b>"+d.getDate()+"</b></button></div>";
+  }).join("");
+  PERIODS.forEach(function(p){
+    g+='<div class="wl" aria-hidden="true">'+p[2]+"</div>";
+    days.forEach(function(ds){
+      var arr=items[ds][p[0]],h="";
+      arr.slice(0,2).forEach(function(it){
+        var c=CATS[it.e.cat]||CATS.pessoal;
+        h+='<span class="wb'+(it.e.done[ds]?" dn":"")+'" style="--k:'+c[1]+'">'+esc(it.e.title)+"</span>";
+      });
+      if(arr.length>2)h+='<span class="wm">+'+(arr.length-2)+"</span>";
+      g+='<button class="wc'+(ds===selDay&&selPeriod===p[0]?" sel":"")+'" data-wcell="'+ds+"|"+p[0]+'" aria-label="'+longDate(ds)+", "+p[1]+", "+arr.length+' compromissos">'+h+"</button>";
+    });
+  });
+  var list=dayItems(selDay),head,body;
+  if(selPeriod){
+    var pl=PERIODS.filter(function(p){return p[0]===selPeriod})[0];
+    var sub=list.filter(function(it){return periodOf(it.e)===selPeriod});
+    head=longDate(selDay)+" · "+pl[1];
+    body=sub.length?sub.map(function(it){return evHTML(it,false,true)}).join(""):'<div class="empty">Nada neste período. Toque no + para marcar algo.</div>';
+  }else{
+    head=longDate(selDay);
+    body=list.length?groupedHTML(list):'<div class="empty">Dia livre. Toque no + para marcar algo.</div>';
+  }
+  return'<div class="monthbar"><button class="icon-btn" data-wk="-1" aria-label="Semana anterior">‹</button><strong style="text-transform:none">'+weekTitle(a,b)+'</strong><button class="icon-btn" data-wk="1" aria-label="Próxima semana">›</button></div>'
+   +'<div class="card wk">'+g+"</div><h2>"+head+"</h2>"+body;
+}
+function renderAgenda(){
+  var tg='<div class="vtg"><button data-view="mes" class="'+(agView==="mes"?"on":"")+'">Mês</button><button data-view="sem" class="'+(agView==="sem"?"on":"")+'">Semana</button></div>';
+  $("v-agenda").innerHTML=tg+(agView==="sem"?renderWeek():renderMonth());
 }
 
 function tagsOf(t){return(t.match(/#[\p{L}\p{N}_-]+/gu)||[]).map(function(x){return x.toLowerCase()})}
@@ -384,17 +470,26 @@ function renderNotas(){
   var list=S.notes.slice().sort(function(a,b){return b.at-a.at}).filter(function(n){
     if(tagFilter&&tagsOf(n.text).indexOf(tagFilter)<0)return false;
     if(q&&n.text.toLowerCase().indexOf(q)<0)return false;
+    if(notesMode==="fotos"&&!n.photos.length)return false;
     return true;
   });
-  var h='<div class="card capture"><textarea id="nText" placeholder="Anote uma ideia, um lembrete, um pensamento… use #tags para organizar"></textarea><button class="btn" id="nSave">Guardar</button></div>'
+  var h='<div class="card capture"><textarea id="nText" placeholder="Anote uma ideia, um lembrete, um pensamento… use #tags para organizar">'+esc(nDraft)+'</textarea>'
+     +(pend.length?'<div class="pth">'+pend.map(function(p){return'<div class="pp"><img src="'+p.url+'" alt="Foto para guardar"><button class="rm" data-prm="'+esc(p.id)+'" aria-label="Tirar esta foto">✕</button></div>'}).join("")+'</div>':'')
+     +'<div class="cbtns"><button class="btn ghost" id="nCam">📷 Tirar foto</button><button class="btn ghost" id="nGal">🖼️ Da galeria</button></div>'
+     +'<button class="btn" id="nSave">Guardar</button></div>'
    +'<h2>Suas notas</h2>'
-   +'<input type="text" id="nSearch" placeholder="Buscar…" value="'+esc(q)+'" style="margin-bottom:10px">';
-  if(tl.length)h+='<div class="tags">'+tl.map(function(t){return'<button class="tag chip'+(t===tagFilter?" on":"")+'" data-tag="'+esc(t)+'">'+esc(t)+'</button>'}).join("")+'</div>';
+   +'<input type="text" id="nSearch" placeholder="Buscar em notas e fotos…" value="'+esc(q)+'" style="margin-bottom:10px">';
+  h+='<div class="tags"><button class="tag chip'+(notesMode==="all"&&!tagFilter?" on":"")+'" data-nmode="all">Tudo</button><button class="tag chip'+(notesMode==="fotos"?" on":"")+'" data-nmode="fotos">Só fotos</button>'
+   +tl.map(function(t){return'<button class="tag chip'+(t===tagFilter?" on":"")+'" data-tag="'+esc(t)+'">'+esc(t)+'</button>'}).join("")+'</div>';
   h+=list.length?list.map(function(n){
     var d=new Date(n.at);
-    return'<div class="card note"><p>'+esc(n.text)+'</p><div class="foot"><span>'+d.getDate()+" "+MESES[d.getMonth()].slice(0,3)+" · "+p2(d.getHours())+":"+p2(d.getMinutes())+'</span><button class="x" data-ndel="'+esc(n.id)+'">Excluir</button></div></div>';
+    var gal=n.photos.length?'<div class="ngal">'+n.photos.map(function(pid){return'<button data-lb="'+esc(pid)+'" aria-label="Ampliar foto"><img data-pid="'+esc(pid)+'" alt="Foto da nota"></button>'}).join("")+'</div>':"";
+    return'<div class="card note">'+(n.text?'<p>'+esc(n.text)+'</p>':"")+gal+'<div class="foot"><span>'+d.getDate()+" "+MESES[d.getMonth()].slice(0,3)+" · "+p2(d.getHours())+":"+p2(d.getMinutes())+'</span><span class="acts">'
+      +(n.photos.length?'<button class="x" data-nshare="'+esc(n.id)+'">Salvar na galeria</button>':"")
+      +'<button class="x" data-ndel="'+esc(n.id)+'">Excluir</button></span></div></div>';
   }).join(""):'<div class="empty">'+(S.notes.length?"Nenhuma nota encontrada.":"Sua primeira nota aparece aqui.")+'</div>';
   $("v-notas").innerHTML=h;
+  hydrate($("v-notas"));
 }
 
 function render(){
@@ -409,6 +504,78 @@ function setTab(t){
   document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("on",v.id==="v-"+t)});
   document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.tab===t)});
   render();$("main").scrollTop=0;
+}
+
+/* ---------- fotos (ficam no aparelho, em IndexedDB) ---------- */
+var DBP=null;
+function idb(){
+  if(DBP)return DBP;
+  DBP=new Promise(function(res,rej){
+    try{
+      var r=indexedDB.open("agenda-fotos",1);
+      r.onupgradeneeded=function(){r.result.createObjectStore("fotos",{keyPath:"id"})};
+      r.onsuccess=function(){res(r.result)};
+      r.onerror=function(){rej(r.error)};
+    }catch(e){rej(e)}
+  });
+  return DBP;
+}
+function tx(mode,fn){
+  return idb().then(function(db){
+    return new Promise(function(res,rej){
+      var t=db.transaction("fotos",mode),rq=fn(t.objectStore("fotos"));
+      t.oncomplete=function(){res(rq&&rq.result)};
+      t.onerror=function(){rej(t.error)};
+      t.onabort=function(){rej(t.error)};
+    });
+  });
+}
+function putFoto(id,blob){return tx("readwrite",function(s){return s.put({id:id,blob:blob,at:Date.now()})})}
+function getFoto(id){return tx("readonly",function(s){return s.get(id)}).then(function(r){return r?r.blob:null})}
+function delFoto(id){return tx("readwrite",function(s){return s["delete"](id)})}
+function fotoUrl(id){
+  if(urls[id])return Promise.resolve(urls[id]);
+  return getFoto(id).then(function(b){if(!b)return null;urls[id]=URL.createObjectURL(b);return urls[id]});
+}
+function hydrate(root){
+  root.querySelectorAll("img[data-pid]").forEach(function(img){
+    fotoUrl(img.dataset.pid).then(function(u){
+      if(u){img.src=u;return}
+      var m=document.createElement("div");m.className="miss";m.textContent="foto indisponível";
+      if(img.parentNode)img.parentNode.replaceChild(m,img);
+    }).catch(function(){});
+  });
+}
+function shrink(file){
+  return new Promise(function(res,rej){
+    var u=URL.createObjectURL(file),im=new Image();
+    im.onload=function(){
+      var w=im.naturalWidth,h=im.naturalHeight,s=Math.min(1,1600/Math.max(w,h));
+      var c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*s));c.height=Math.max(1,Math.round(h*s));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      URL.revokeObjectURL(u);
+      c.toBlob(function(b){b?res(b):rej(new Error("toBlob"))},"image/jpeg",0.82);
+    };
+    im.onerror=function(){URL.revokeObjectURL(u);rej(new Error("img"))};
+    im.src=u;
+  });
+}
+function addFiles(list){
+  var files=Array.prototype.slice.call(list||[]);
+  if(!files.length)return;
+  Promise.all(files.map(function(f){return shrink(f).then(function(b){return{id:uid(),blob:b,url:URL.createObjectURL(b)}})}))
+    .then(function(arr){pend=pend.concat(arr);renderNotas()})
+    .catch(function(){alert("Não consegui abrir essa foto. Tente outra.")});
+}
+function sharePhotos(n){
+  Promise.all(n.photos.map(function(pid,i){
+    return getFoto(pid).then(function(b){return b?new File([b],"foto-"+iso(new Date(n.at))+"-"+(i+1)+".jpg",{type:"image/jpeg"}):null});
+  })).then(function(fs){
+    fs=fs.filter(Boolean);
+    if(!fs.length){alert("As fotos desta nota não estão neste aparelho.");return}
+    if(navigator.canShare&&navigator.canShare({files:fs})){return navigator.share({files:fs}).catch(function(){})}
+    fs.forEach(function(f){var a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove()});
+  }).catch(function(){});
 }
 
 /* ---------- sheets ---------- */
@@ -491,7 +658,7 @@ function openEv(id,ds){
   $("evDate").value=editing?(editDs||editing.date):(tab==="agenda"?selDay:iso(new Date()));
   $("evTime").value=editing?(editing.time||""):"";
   $("evNote").value=editing?(editing.note||""):"";
-  F={when:editing?editing.when:"dia",cat:editing?editing.cat:"pessoal",rp:rec.type,days:(rec.days||[]).slice()};
+  F={when:editing?editing.when:((tab==="agenda"&&agView==="sem"&&selPeriod)?selPeriod:"dia"),cat:editing?editing.cat:"pessoal",rp:rec.type,days:(rec.days||[]).slice()};
   $("evUntil").value=rec.until||"";
   $("evDateLab").textContent="Dia";
   $("evDel").hidden=!editing;
@@ -607,19 +774,49 @@ $("main").addEventListener("click",function(e){
   var t=e.target.closest("button");if(!t)return;
   if(t.dataset.done){var a=t.dataset.done.split("|"),ev=find(a[0]);if(ev){if(ev.done[a[1]])delete ev.done[a[1]];else ev.done[a[1]]=true;save();render()}return}
   if(t.dataset.edit){var b=t.dataset.edit.split("|");openEv(b[0],b[1]);return}
-  if(t.dataset.day){selDay=t.dataset.day;renderAgenda();return}
+  if(t.dataset.view){
+    agView=t.dataset.view;selPeriod=null;
+    try{localStorage.setItem("agenda-view",agView)}catch(e){}
+    var sd=parse(selDay);cursor=new Date(sd.getFullYear(),sd.getMonth(),1);
+    renderAgenda();return;
+  }
+  if(t.dataset.wk){selDay=addDays(selDay,7*+t.dataset.wk);selPeriod=null;renderAgenda();return}
+  if(t.dataset.wday){selDay=t.dataset.wday;selPeriod=null;renderAgenda();return}
+  if(t.dataset.wcell){var wc=t.dataset.wcell.split("|");selDay=wc[0];selPeriod=wc[1];renderAgenda();return}
+  if(t.dataset.day){selDay=t.dataset.day;selPeriod=null;renderAgenda();return}
   if(t.dataset.m){cursor=new Date(cursor.getFullYear(),cursor.getMonth()+ +t.dataset.m,1);renderAgenda();return}
   if(t.dataset.tag){tagFilter=tagFilter===t.dataset.tag?"":t.dataset.tag;renderNotas();return}
+  if(t.dataset.nmode){notesMode=t.dataset.nmode;if(notesMode==="all")tagFilter="";renderNotas();return}
+  if(t.id==="nCam"){$("fCam").click();return}
+  if(t.id==="nGal"){$("fGal").click();return}
+  if(t.dataset.prm){
+    pend=pend.filter(function(p){if(p.id===t.dataset.prm){URL.revokeObjectURL(p.url);return false}return true});
+    renderNotas();return;
+  }
+  if(t.dataset.lb){
+    fotoUrl(t.dataset.lb).then(function(u){if(u){$("lbImg").src=u;$("lb").classList.add("on")}});
+    return;
+  }
+  if(t.dataset.nshare){var sn=S.notes.filter(function(n){return n.id===t.dataset.nshare})[0];if(sn)sharePhotos(sn);return}
   if(t.id==="nSave"){
-    var v=$("nText").value.trim();if(!v){$("nText").focus();return}
-    S.notes.push({id:uid(),text:v,at:Date.now()});save();renderNotas();return;
+    var v=$("nText").value.trim();
+    if(!v&&!pend.length){$("nText").focus();return}
+    var nn={id:uid(),text:v,at:Date.now(),photos:pend.map(function(p){return p.id})},saving=pend;
+    Promise.all(saving.map(function(p){return putFoto(p.id,p.blob)})).then(function(){
+      saving.forEach(function(p){urls[p.id]=p.url});
+      S.notes.push(nn);pend=[];nDraft="";save();renderNotas();
+    }).catch(function(){alert("Não deu para guardar a foto neste aparelho. A nota não foi salva.")});
+    return;
   }
   if(t.dataset.ndel){
     if(!t.classList.contains("arm")){t.classList.add("arm");t.textContent="Tem certeza?";return}
+    var dn=S.notes.filter(function(n){return n.id===t.dataset.ndel})[0];
+    if(dn)dn.photos.forEach(function(pid){delFoto(pid).catch(function(){});if(urls[pid]){URL.revokeObjectURL(urls[pid]);delete urls[pid]}});
     S.notes=S.notes.filter(function(n){return n.id!==t.dataset.ndel});save();renderNotas();
   }
 });
 $("main").addEventListener("input",function(e){
+  if(e.target.id==="nText"){nDraft=e.target.value;return}
   if(e.target.id==="nSearch"){
     q=e.target.value.trim().toLowerCase();
     var pos=e.target.selectionStart;renderNotas();
@@ -648,11 +845,18 @@ $("imp").addEventListener("change",function(){
     try{
       var p=JSON.parse(r.result);
       if(!Array.isArray(p.events)||!Array.isArray(p.notes))throw 0;
-      S={events:p.events.map(migrate),notes:p.notes,name:p.name||""};save();closeSheets();render();
+      S={events:p.events.map(migrate),notes:p.notes.map(fixNote),name:p.name||""};save();closeSheets();render();
     }catch(e){alert("Esse arquivo não parece um backup da agenda.")}
   };
   r.readAsText(f);this.value="";
 });
+
+["fCam","fGal"].forEach(function(id){
+  $(id).addEventListener("change",function(){addFiles(this.files);this.value=""});
+});
+function closeLb(){$("lb").classList.remove("on");$("lbImg").removeAttribute("src")}
+$("lb").addEventListener("click",closeLb);
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){})}catch(e){}
 
 render();
 document.addEventListener("visibilitychange",function(){
